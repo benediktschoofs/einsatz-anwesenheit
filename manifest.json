@@ -1,0 +1,10 @@
+{
+  "name": "Einsatz-Anwesenheit",
+  "short_name": "Anwesenheit",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#121214",
+  "theme_color": "#c8102e",
+  "lang": "de"
+}
