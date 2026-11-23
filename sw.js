@@ -1,13 +1,13 @@
 // Offline-Unterstützung: App und PDF-Bausteine werden auf dem Gerät gespeichert.
-const CACHE = "einsatz-v1";
+const CACHE = "einsatz-v2";
 const PDF_LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
 ];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all([
-    c.add("./index.html").catch(() => {}),
-    c.add("./manifest.json").catch(() => {}),
+    c.add(new Request("./index.html", { cache: "reload" })).catch(() => {}),
+    c.add(new Request("./manifest.json", { cache: "reload" })).catch(() => {}),
     ...PDF_LIBS.map(u => c.add(new Request(u, { mode: "cors" })).catch(() => {}))
   ])));
   self.skipWaiting();
@@ -26,7 +26,7 @@ self.addEventListener("fetch", e => {
     const key = (req.mode === "navigate" || url.pathname.endsWith("/")) ? "./index.html" : req;
     e.respondWith(caches.open(CACHE).then(async c => {
       const cached = await c.match(key, { ignoreSearch: true });
-      const net = fetch(req).then(r => { if (r && r.ok) c.put(key, r.clone()); return r; }).catch(() => null);
+      const net = fetch(req, { cache: "no-cache" }).then(r => { if (r && r.ok) c.put(key, r.clone()); return r; }).catch(() => null);
       if (cached) { e.waitUntil(net); return cached; }
       return (await net) || new Response("Offline – App bitte einmal mit Internet öffnen.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
     }));
