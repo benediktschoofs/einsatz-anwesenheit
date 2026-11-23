@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Anwesenheit">
+<title>Einsatz-Anwesenheit</title>
+<style>
+:root{
+  --bg:#f4f2ef; --card:#fff; --ink:#1b1b1d; --muted:#6c6a66; --line:#e3dfd9;
+  --red:#c8102e; --red-d:#9e0c24; --red-soft:#fbe7ea; --ok:#1f7a4d; --amber:#b86e00;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#121214;--card:#1d1d20;--ink:#f1efec;--muted:#9c9a96;--line:#2e2d31;--red:#ff4d5e;--red-d:#e43a4c;--red-soft:#3a1a1f;--ok:#4cc38a;--amber:#f0a640}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(76px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+header{position:sticky;top:0;z-index:5;background:var(--red);color:#fff;padding:12px 16px 12px;padding-top:calc(12px + env(safe-area-inset-top));margin-top:calc(-1 * env(safe-area-inset-top));display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px;flex:1}
+header .sync{font-size:12px;opacity:.85}
+main{padding:14px;max-width:720px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.card h2 .tag{font-size:12px;font-weight:600;color:var(--muted);margin-left:auto}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);appearance:none}
+textarea{min-height:70px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-offset:-1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.primary:active{background:var(--red-d)}
+.btn.ghost{background:transparent}
+.btn.small{padding:7px 10px;font-size:14px}
+.btn.block{width:100%}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns .btn{flex:1}
+.vh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.vh .num{width:30px;height:30px;border-radius:8px;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.vh .num.pkw{background:var(--amber)}
+.vh select,.vh input{flex:1}
+.person{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.person:first-of-type{border-top:0}
+.person .nm{font-weight:600}
+.person .fn{font-size:13px;color:var(--muted)}
+.person .grow{flex:1;min-width:0}
+.agt{font-size:11px;font-weight:700;background:var(--red-soft);color:var(--red);padding:2px 6px;border-radius:6px;margin-left:6px}
+.x{border:0;background:none;color:var(--muted);font-size:22px;padding:4px 8px;cursor:pointer}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+.staerke{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;gap:6px}
+.staerke div{background:var(--bg);border-radius:10px;padding:8px 2px}
+.staerke b{display:block;font-size:22px}
+.staerke span{font-size:11px;color:var(--muted)}
+.staerke div.total{background:var(--red);color:#fff}
+.staerke div.total span{color:#fff;opacity:.85}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;border:0;background:none;padding:9px 0 8px;font:inherit;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button.on{color:var(--red);font-weight:700}
+.list-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.list-item:first-child{border-top:0}
+.list-item .date{width:52px;text-align:center;background:var(--red-soft);color:var(--red);border-radius:10px;padding:6px 0;font-weight:700;line-height:1.1;flex:none}
+.list-item .date small{display:block;font-size:11px;font-weight:600}
+.list-item .grow{flex:1;min-width:0}
+.list-item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-item .s{font-size:13px;color:var(--muted)}
+.pill{font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--red);border-color:var(--red);color:#fff}
+.chip[disabled]{opacity:.35}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.open{display:flex}
+.sheet{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.sheet h3{margin:0 0 6px;font-size:17px}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.mem{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.mem:first-child{border-top:0}
+.mem span{flex:1}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+.search{margin-bottom:8px}
+.hidden{display:none!important}
+.prow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0}
+.prow .grow{flex:1;min-width:0}
+.prow .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow.off .nm{font-weight:500;color:var(--muted)}
+.fnbtn{border:0;background:none;padding:2px 0 0;font:inherit;font-size:13px;color:var(--red);cursor:pointer;text-align:left}
+.fnbtn.none{color:var(--muted);text-decoration:underline dotted}
+.seg{display:flex;gap:5px;flex:none}
+.seg button{width:42px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--red);border-color:var(--red);color:#fff}
+.seg button.p.on{background:var(--amber);border-color:var(--amber)}
+.seg button.p{font-size:12px}
+.vrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.vrow:last-child{margin-bottom:0}
+.vrow .lbl{flex:1}
+.filter{display:flex;gap:6px;margin-bottom:8px}
+pre.out{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px;font:13px/1.4 ui-monospace,Menlo,monospace;max-height:40vh;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/><path d="M5 14a7 7 0 0 0 14 0"/></svg>
+  <h1 id="title">Neuer Einsatz</h1>
+  <span class="sync" id="sync">lokal</span>
+</header>
+
+<main>
+  <!-- ============ EINSATZ ============ -->
+  <section id="v-einsatz">
+    <div class="card">
+      <h2>Einsatzdaten</h2>
+      <div class="row">
+        <div><label for="e-datum">Datum</label><input type="date" id="e-datum"></div>
+        <div><label for="e-zeit">Alarmzeit</label><input type="time" id="e-zeit"></div>
+      </div>
+      <div class="row">
+        <div><label for="e-nr">Einsatz-Nr.</label><input id="e-nr" inputmode="numeric" placeholder="z. B. 2026-117"></div>
+        <div><label for="e-stichwort">Stichwort</label><input id="e-stichwort" list="stichworte" placeholder="z. B. B2"></div>
+      </div>
+      <label for="e-ort">Einsatzort</label><input id="e-ort" placeholder="Straße, Ort">
+      <label for="e-leiter">Einsatzleiter</label><input id="e-leiter" list="mitglieder-dl" placeholder="Name">
+    </div>
+
+    <div id="fahrzeuge"></div>
+
+    <div class="card">
+      <h2>Stärke <span class="tag" id="st-text">0/0/0/0</span></h2>
+      <div class="staerke">
+        <div><b id="st-zf">0</b><span>Zugführer</span></div>
+        <div><b id="st-uf">0</b><span>Unterführer</span></div>
+        <div><b id="st-m">0</b><span>Mannschaft</span></div>
+        <div class="total"><b id="st-g">0</b><span>Gesamt</span></div>
+      </div>
+      <p class="hint" id="st-agt"></p>
+    </div>
+
+    <div class="card">
+      <label for="e-bem" style="margin-top:0">Bemerkung</label>
+      <textarea id="e-bem" placeholder="optional"></textarea>
+    </div>
+
+    <div class="btns" style="margin-bottom:10px">
+      <button class="btn primary" id="b-save">Einsatz speichern</button>
+    </div>
+    <div class="btns" style="margin-bottom:10px">
+      <button class="btn primary" id="b-pdf" style="background:var(--ink);border-color:var(--ink);color:var(--bg)">PDF</button>
+      <button class="btn" id="b-copy">Text kopieren</button>
+      <button class="btn" id="b-csv">CSV</button>
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="b-new">Neuer leerer Einsatz</button>
+      <button class="btn ghost danger hidden" id="b-del">Löschen</button>
+    </div>
+  </section>
+
+  <!-- ============ ARCHIV ============ -->
+  <section id="v-archiv" class="hidden">
+    <input class="search" id="a-search" type="search" placeholder="Suchen (Nr., Stichwort, Ort, Name)">
+    <div class="card" id="a-list"></div>
+  </section>
+
+  <!-- ============ STAMMDATEN ============ -->
+  <section id="v-stamm" class="hidden">
+    <div class="card">
+      <h2>Mitglieder <span class="tag" id="m-count"></span></h2>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input id="m-new" placeholder="Name, Vorname">
+        <button class="btn primary" id="m-add" style="flex:none">+</button>
+      </div>
+      <p class="hint">Mehrere auf einmal: Namen mit Zeilenumbruch oder Semikolon einfügen.</p>
+      <div id="m-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Fahrzeuge</h2>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input id="f-new" placeholder="z. B. HLF 20, LF 10, MTW">
+        <button class="btn primary" id="f-add" style="flex:none">+</button>
+      </div>
+      <div id="f-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Alle Einsätze exportieren</h2>
+      <div class="btns"><button class="btn" id="b-csv-all">CSV aller Einsätze</button></div>
+    </div>
+  </section>
+</main>
+
+<datalist id="mitglieder-dl"></datalist>
+<datalist id="stichworte">
+  <option>B1</option><option>B2</option><option>B3</option><option>B4</option>
+  <option>TH1</option><option>TH2</option><option>TH3</option><option>TH VU</option>
+  <option>ABC1</option><option>ABC2</option><option>Brandmeldeanlage</option><option>Ölspur</option><option>Unwetter</option><option>Übung</option>
+</datalist>
+
+<nav class="tabs">
+  <button data-v="einsatz" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Einsatz</button>
+  <button data-v="archiv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h18v13H3z"/><path d="M3 7l2-4h14l2 4M9 12h6"/></svg>Archiv</button>
+  <button data-v="stamm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.8 3 2.6 3.5 5.2"/></svg>Stammdaten</button>
+</nav>
+
+<!-- Person hinzufügen -->
+<div class="sheet-bg" id="sheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="s-title">
+    <h3 id="s-title">Funktion</h3>
+    <p class="hint" id="s-sub" style="margin-top:0"></p>
+    <label>Funktion</label>
+    <div class="chips" id="s-fn"></div>
+    <label>Atemschutz</label>
+    <div class="chips"><button class="chip" id="s-agt">unter Atemschutz eingesetzt</button></div>
+    <div class="btns" style="margin-top:16px">
+      <button class="btn" id="s-cancel">Abbrechen</button>
+      <button class="btn primary" id="s-ok">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestätigen / Ausgabe -->
+<div class="sheet-bg" id="dlg">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h3 id="d-title"></h3>
+    <p id="d-text" class="hint"></p>
+    <pre class="out hidden" id="d-pre"></pre>
+    <div class="btns" style="margin-top:14px">
+      <button class="btn" id="d-no">Abbrechen</button>
+      <button class="btn primary" id="d-yes">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const FUNKTIONEN = ["Einsatzleiter","Zugführer","Gruppenführer","Fahrzeugführer","Maschinist","Melder",
+  "Angriffstrupp-Führer","Angriffstrupp-Mann","Wassertrupp-Führer","Wassertrupp-Mann",
+  "Schlauchtrupp-Führer","Schlauchtrupp-Mann","Einsatzkraft"];
+const ZF = ["Einsatzleiter","Zugführer"];
+const UF = ["Gruppenführer","Fahrzeugführer"];
+const SLOTS = [
+  {key:"fz1", label:"1. Fahrzeug", num:"1"},
+  {key:"fz2", label:"2. Fahrzeug", num:"2"},
+  {key:"pkw", label:"Pkw < 8 min", num:"P"}
+];
+
+/* ---------------- Speicher ---------------- */
+const START_MITGLIEDER = [];
+let db = null;
+let stamm = {mitglieder:START_MITGLIEDER.slice(), fahrzeuge:["Fahrzeug 1","Fahrzeug 2"]};
+let einsaetze = {};          // id -> data
+const LS = "fw-anwesenheit-v1";
+
+function lsLoad(){ try{ const o = JSON.parse(localStorage.getItem(LS)||"null"); if(o){ if(o.stamm && o.stamm.mitglieder && o.stamm.mitglieder.length) stamm = o.stamm; einsaetze = o.einsaetze||{}; } }catch(e){} }
+function lsSave(){ try{ localStorage.setItem(LS, JSON.stringify({stamm, einsaetze})); }catch(e){} }
+
+async function saveStamm(){
+  lsSave();
+  if(db){ try{ await db.doc("stamm/daten").set(clone(stamm)); }catch(e){ toast("Speichern fehlgeschlagen ("+e.code+")"); } }
+}
+async function saveEinsatz(id, data){
+  einsaetze[id] = data; lsSave();
+  if(db){ await db.collection("einsaetze").doc(id).set(clone(data)); }
+}
+async function deleteEinsatz(id){
+  delete einsaetze[id]; lsSave();
+  if(db){ await db.collection("einsaetze").doc(id).delete(); }
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------------- Aktueller Einsatz ---------------- */
+let cur = null;     // {id, ...}
+let dirty = false;
+
+function today(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function nowTime(){ const d=new Date(); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function newId(){ return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function blank(){
+  return {id:newId(), datum:today(), zeit:nowTime(), nr:"", stichwort:"", ort:"", leiter:"", bemerkung:"",
+    fahrzeuge:{fz1:stamm.fahrzeuge[0]||"", fz2:stamm.fahrzeuge[1]||"", pkw:""},
+    personen:[], created:Date.now(), updated:null};
+}
+
+function readForm(){
+  cur.datum=$("e-datum").value; cur.zeit=$("e-zeit").value; cur.nr=$("e-nr").value.trim();
+  cur.stichwort=$("e-stichwort").value.trim(); cur.ort=$("e-ort").value.trim();
+  cur.leiter=$("e-leiter").value.trim(); cur.bemerkung=$("e-bem").value;
+}
+function fillForm(){
+  $("e-datum").value=cur.datum||""; $("e-zeit").value=cur.zeit||""; $("e-nr").value=cur.nr||"";
+  $("e-stichwort").value=cur.stichwort||""; $("e-ort").value=cur.ort||""; $("e-leiter").value=cur.leiter||"";
+  $("e-bem").value=cur.bemerkung||"";
+  $("b-del").classList.toggle("hidden", !einsaetze[cur.id]);
+  $("title").textContent = einsaetze[cur.id] ? ("Einsatz "+(cur.nr||fmtDate(cur.datum))) : "Neuer Einsatz";
+  renderFahrzeuge(); renderStaerke();
+}
+["e-datum","e-zeit","e-nr","e-stichwort","e-ort","e-leiter","e-bem"].forEach(id=>$(id).addEventListener("input",()=>{dirty=true; readForm(); draft();}));
+
+function draft(){ try{ localStorage.setItem(LS+"-draft", JSON.stringify(cur)); }catch(e){} }
+
+/* ---------------- Fahrzeuge / Personen ---------------- */
+let filterOnly = false;
+function vehSelect(key){
+  const opts = [""].concat(stamm.fahrzeuge);
+  if(cur.fahrzeuge[key] && !opts.includes(cur.fahrzeuge[key])) opts.push(cur.fahrzeuge[key]);
+  return `<select data-veh="${key}">${opts.map(o=>`<option ${o===cur.fahrzeuge[key]?"selected":""} value="${esc(o)}">${o?esc(o):"– nicht ausgerückt –"}</option>`).join("")}</select>`;
+}
+function renderFahrzeuge(){
+  const box = $("fahrzeuge");
+  const cnt = k => cur.personen.filter(p=>p.fz===k).length;
+  const byName = new Map(cur.personen.map((p,i)=>[p.name,{...p,i}]));
+  let names = stamm.mitglieder.slice();
+  cur.personen.forEach(p=>{ if(!names.includes(p.name)) names.push(p.name); });
+  if(filterOnly) names = names.filter(n=>byName.has(n));
+  const rows = names.map(n=>{
+    const p = byName.get(n);
+    const seg = SLOTS.map(s=>`<button class="${s.key==="pkw"?"p":""} ${p&&p.fz===s.key?"on":""}" data-n="${esc(n)}" data-s="${s.key}" aria-label="${esc(s.label)}">${s.key==="pkw"?"Pkw":s.num}</button>`).join("");
+    const fn = p ? `<button class="fnbtn ${p.funktion?"":"none"}" data-fn="${p.i}">${p.funktion?esc(p.funktion):"Funktion wählen"}${p.agt?'<span class="agt">AGT</span>':''}</button>` : "";
+    return `<div class="prow ${p?"":"off"}"><div class="grow"><div class="nm">${esc(n)}</div>${fn}</div><div class="seg">${seg}</div></div>`;
+  }).join("") || `<div class="empty">${filterOnly?"Noch niemand eingetragen.":"Keine Mitglieder – unter „Stammdaten“ anlegen."}</div>`;
+
+  box.innerHTML = `
+    <div class="card">
+      <h2>Fahrzeuge</h2>
+      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num">1</div>${vehSelect("fz1")}</div><span class="pill">${cnt("fz1")}</span></div>
+      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num">2</div>${vehSelect("fz2")}</div><span class="pill">${cnt("fz2")}</span></div>
+      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num pkw">P</div><span class="lbl">Pkw nachgekommen (&lt; 8 min)</span></div><span class="pill">${cnt("pkw")}</span></div>
+    </div>
+    <div class="card">
+      <h2>Personal <span class="tag">${cur.personen.length} von ${Math.max(names.length, stamm.mitglieder.length)} anwesend</span></h2>
+      <div class="filter">
+        <button class="chip ${filterOnly?"":"on"}" data-filter="0">Alle</button>
+        <button class="chip ${filterOnly?"on":""}" data-filter="1">Nur Anwesende</button>
+      </div>
+      <div>${rows}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="p-new" placeholder="Weitere Person (nicht in Liste)">
+        <button class="btn" id="p-add" style="flex:none">+</button>
+      </div>
+    </div>`;
+
+  box.querySelectorAll("[data-veh]").forEach(el=>el.addEventListener("input",()=>{cur.fahrzeuge[el.dataset.veh]=el.value; dirty=true; draft();}));
+  box.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{filterOnly = el.dataset.filter==="1"; renderFahrzeuge();}));
+  box.querySelectorAll("[data-s]").forEach(el=>el.addEventListener("click",()=>{
+    const n=el.dataset.n, s=el.dataset.s, i=cur.personen.findIndex(p=>p.name===n);
+    if(i<0) cur.personen.push({name:n, fz:s, funktion:"", agt:false});
+    else if(cur.personen[i].fz===s) cur.personen.splice(i,1);
+    else cur.personen[i].fz=s;
+    dirty=true; draft(); renderFahrzeuge(); renderStaerke();
+  }));
+  box.querySelectorAll("[data-fn]").forEach(el=>el.addEventListener("click",()=>openSheet(+el.dataset.fn)));
+  const addP=()=>{
+    const v=$("p-new").value.trim(); if(!v) return;
+    if(!stamm.mitglieder.some(x=>x.toLowerCase()===v.toLowerCase())){ stamm.mitglieder.push(v); sortM(); saveStamm(); renderStamm(); }
+    filterOnly=false; renderFahrzeuge(); toast(v+" hinzugefügt – jetzt 1, 2 oder Pkw antippen");
+  };
+  $("p-add").addEventListener("click",addP);
+  $("p-new").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addP(); }});
+}
+
+function staerke(e){
+  let zf=0,uf=0,m=0,agt=0;
+  e.personen.forEach(p=>{ if(ZF.includes(p.funktion)) zf++; else if(UF.includes(p.funktion)) uf++; else m++; if(p.agt) agt++; });
+  return {zf,uf,m,g:zf+uf+m,agt};
+}
+function renderStaerke(){
+  const s = staerke(cur);
+  $("st-zf").textContent=s.zf; $("st-uf").textContent=s.uf; $("st-m").textContent=s.m; $("st-g").textContent=s.g;
+  $("st-text").textContent=`${s.zf}/${s.uf}/${s.m}/${s.g}`;
+  $("st-agt").textContent = s.agt ? `${s.agt} Atemschutzgeräteträger eingesetzt` : "";
+}
+
+/* ---------------- Sheet: Funktion ---------------- */
+let sh = {i:-1, fn:"", agt:false};
+function openSheet(i){
+  const p = cur.personen[i]; if(!p) return;
+  const s = SLOTS.find(x=>x.key===p.fz);
+  sh = {i, fn:p.funktion, agt:!!p.agt};
+  $("s-title").textContent = p.name;
+  $("s-sub").textContent = s.label + (p.fz!=="pkw" && cur.fahrzeuge[p.fz] ? " · "+cur.fahrzeuge[p.fz] : "");
+  renderSheet(); $("sheet").classList.add("open");
+}
+function renderSheet(){
+  $("s-fn").innerHTML = FUNKTIONEN.map(f=>`<button class="chip ${f===sh.fn?"on":""}" data-f="${esc(f)}">${esc(f)}</button>`).join("");
+  $("s-fn").querySelectorAll("[data-f]").forEach(b=>b.addEventListener("click",()=>{ sh.fn = sh.fn===b.dataset.f ? "" : b.dataset.f; renderSheet(); }));
+  $("s-agt").classList.toggle("on", sh.agt);
+}
+$("s-agt").addEventListener("click",()=>{ sh.agt=!sh.agt; renderSheet(); });
+$("s-cancel").addEventListener("click",()=>$("sheet").classList.remove("open"));
+$("sheet").addEventListener("click",e=>{ if(e.target.id==="sheet") $("sheet").classList.remove("open"); });
+$("s-ok").addEventListener("click",()=>{
+  const p = cur.personen[sh.i]; if(p){ p.funktion=sh.fn; p.agt=sh.agt; }
+  dirty=true; draft();
+  $("sheet").classList.remove("open"); renderFahrzeuge(); renderStaerke();
+});
+
+/* ---------------- Speichern / Laden ---------------- */
+$("b-save").addEventListener("click", async ()=>{
+  readForm();
+  if(!cur.datum){ toast("Bitte Datum eintragen"); return; }
+  if(!cur.personen.length){ toast("Noch keine Person eingetragen"); return; }
+  cur.updated = Date.now();
+  const btn=$("b-save"); btn.disabled=true; btn.textContent="Speichere …";
+  try{
+    await saveEinsatz(cur.id, clone(cur));
+    dirty=false; try{localStorage.removeItem(LS+"-draft");}catch(e){}
+    toast("Einsatz gespeichert"); fillForm(); renderArchiv();
+  }catch(e){
+    toast(e && e.code==="quota_exceeded" ? "Speicher voll – alte Einsätze löschen" : "Speichern fehlgeschlagen – lokal gesichert");
+  }finally{ btn.disabled=false; btn.textContent="Einsatz speichern"; }
+});
+
+$("b-new").addEventListener("click", ()=>{
+  const go=()=>{ cur=blank(); dirty=false; try{localStorage.removeItem(LS+"-draft");}catch(e){} fillForm(); window.scrollTo(0,0); };
+  if(dirty) confirmDlg("Neuen Einsatz beginnen?","Nicht gespeicherte Änderungen gehen verloren.","Verwerfen",go); else go();
+});
+$("b-del").addEventListener("click", ()=>{
+  confirmDlg("Einsatz löschen?", `${cur.nr||""} ${cur.stichwort||""} vom ${fmtDate(cur.datum)} wird endgültig gelöscht.`, "Löschen", async ()=>{
+    try{ await deleteEinsatz(cur.id); }catch(e){ toast("Löschen fehlgeschlagen"); return; }
+    cur=blank(); dirty=false; fillForm(); renderArchiv(); toast("Gelöscht");
+  });
+});
+
+function openEinsatz(id){
+  const go=()=>{ cur=clone(einsaetze[id]); dirty=false; fillForm(); show("einsatz"); window.scrollTo(0,0); };
+  if(dirty) confirmDlg("Einsatz öffnen?","Nicht gespeicherte Änderungen am aktuellen Einsatz gehen verloren.","Öffnen",go); else go();
+}
+
+/* ---------------- Export ---------------- */
+function fmtDate(d){ if(!d) return ""; const [y,m,t]=d.split("-"); return `${t}.${m}.${y}`; }
+function asText(e){
+  const s=staerke(e);
+  let t=`EINSATZ ${e.nr||""}\n${fmtDate(e.datum)} ${e.zeit||""} Uhr\n`;
+  if(e.stichwort) t+=`Stichwort: ${e.stichwort}\n`;
+  if(e.ort) t+=`Ort: ${e.ort}\n`;
+  if(e.leiter) t+=`Einsatzleiter: ${e.leiter}\n`;
+  t+=`Stärke: ${s.zf}/${s.uf}/${s.m}/${s.g}`+(s.agt?` (AGT: ${s.agt})`:"")+"\n";
+  SLOTS.forEach(sl=>{
+    const ps=e.personen.filter(p=>p.fz===sl.key); if(!ps.length) return;
+    t+=`\n${sl.label}${sl.key!=="pkw"&&e.fahrzeuge[sl.key]?" – "+e.fahrzeuge[sl.key]:""} (${ps.length})\n`;
+    ps.forEach(p=>t+=`• ${p.name}${p.funktion?" – "+p.funktion:""}${p.agt?" (AGT)":""}\n`);
+  });
+  if(e.bemerkung) t+=`\nBemerkung: ${e.bemerkung}\n`;
+  return t.trim();
+}
+const csvCell = v => { v=String(v??""); return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+function asCSV(list){
+  const head=["Datum","Alarmzeit","Einsatz-Nr","Stichwort","Einsatzort","Einsatzleiter","Position","Fahrzeug","Name","Funktion","Atemschutz"];
+  const rows=[head];
+  list.forEach(e=>e.personen.forEach(p=>{
+    const sl=SLOTS.find(s=>s.key===p.fz);
+    rows.push([fmtDate(e.datum),e.zeit,e.nr,e.stichwort,e.ort,e.leiter,sl?sl.label:p.fz,e.fahrzeuge[p.fz]||"",p.name,p.funktion,p.agt?"ja":""]);
+  }));
+  return "﻿"+rows.map(r=>r.map(csvCell).join(";")).join("\r\n");
+}
+async function copy(text, msg){
+  try{ await navigator.clipboard.writeText(text); toast(msg||"Kopiert"); }
+  catch(e){ showText("Text zum Kopieren", text); }
+}
+const MIME={pdf:"application/pdf",csv:"text/csv;charset=utf-8",txt:"text/plain;charset=utf-8"};
+async function saveFile(filename, data){
+  // 1) Innerhalb von Claude: Download-Funktion der Plattform
+  let dl=null;
+  try{ if(window.claude && claude.use) dl = await Promise.race([claude.use("downloads"), new Promise(r=>setTimeout(()=>r(null),1500))]); }catch(e){ dl=null; }
+  if(dl){
+    try{ await dl.save({filename, data: data instanceof ArrayBuffer ? data.slice(0) : data}); return; }
+    catch(e){ if(e && e.code==="declined") return; }
+  }
+  // 2) Eigenständige Datei (Safari): Teilen-Menü bzw. normaler Download
+  const ext=filename.split(".").pop().toLowerCase();
+  const blob=new Blob([data],{type:MIME[ext]||"application/octet-stream"});
+  try{
+    const file=new File([blob],filename,{type:blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:filename}); return; }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  try{
+    const url=URL.createObjectURL(blob); const a=document.createElement("a");
+    a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000); return;
+  }catch(e){}
+  if(typeof data==="string") showText(filename, data); else toast("Speichern hier nicht möglich");
+}
+async function download(filename, text){ return saveFile(filename, text); }
+$("b-copy").addEventListener("click",()=>{ readForm(); copy(asText(cur),"Einsatzbericht kopiert"); });
+$("b-csv").addEventListener("click",()=>{ readForm(); download(`Einsatz_${cur.datum}_${(cur.nr||"").replace(/[^\w-]/g,"")||"ohneNr"}.csv`, asCSV([cur])); });
+$("b-csv-all").addEventListener("click",()=>{ const l=sortedEinsaetze(); if(!l.length){toast("Noch keine Einsätze gespeichert");return;} download(`Einsaetze_alle_${today()}.csv`, asCSV(l)); });
+
+
+/* ---------------- PDF ---------------- */
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("load")); document.head.appendChild(s); }); }
+let pdfLib=null;
+async function getPdf(){
+  if(pdfLib) return pdfLib;
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
+  pdfLib = window.jspdf.jsPDF; return pdfLib;
+}
+function splitName(n){ const i=n.indexOf(", "); return i>0 ? [n.slice(0,i), n.slice(i+2)] : [n,""]; }
+async function makePDF(e){
+  const jsPDF = await getPdf();
+  const doc = new jsPDF({unit:"mm", format:"a4"});
+  const W = 210, L = 14, R = W-14;
+  const red=[200,16,46];
+  doc.setFillColor(...red); doc.rect(0,0,W,22,"F");
+  doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
+  doc.text("Einsatz – Personalbogen", L, 14);
+  doc.setFontSize(10); doc.setFont("helvetica","normal");
+  doc.text(e.nr ? "Einsatz-Nr. "+e.nr : "", R, 14, {align:"right"});
+  doc.setTextColor(20);
+  const s = staerke(e);
+  const info = [
+    ["Einsatzstelle", e.ort||"–", "Stichwort", e.stichwort||"–"],
+    ["Datum", fmtDate(e.datum)||"–", "Uhrzeit", (e.zeit||"–")+(e.zeit?" Uhr":"")],
+    ["Einsatzleiter", e.leiter||"–", "Stärke", `${s.zf}/${s.uf}/${s.m}/${s.g}`+(s.agt?`  (AGT: ${s.agt})`:"")]
+  ];
+  doc.autoTable({startY:28, body:info, theme:"grid", margin:{left:L,right:L},
+    styles:{fontSize:10, cellPadding:2.2, lineColor:[190,190,190], lineWidth:.2},
+    columnStyles:{0:{fontStyle:"bold",cellWidth:30,fillColor:[245,242,239]},1:{cellWidth:61},2:{fontStyle:"bold",cellWidth:30,fillColor:[245,242,239]},3:{cellWidth:61}}});
+
+  const f1 = e.fahrzeuge.fz1 || "Fahrzeug 1", f2 = e.fahrzeuge.fz2 || "Fahrzeug 2";
+  const byName = new Map(e.personen.map(p=>[p.name,p]));
+  const names = stamm.mitglieder.slice(); e.personen.forEach(p=>{ if(!names.includes(p.name)) names.push(p.name); });
+  const body = names.map((n,i)=>{ const p=byName.get(n); const [nn,vn]=splitName(n);
+    return [i+1, nn, vn, p&&p.fz==="fz1"?"X":"", p&&p.fz==="fz2"?"X":"", p&&p.fz==="pkw"?"X":"", p?(p.funktion||""):"", p&&p.agt?"X":""]; });
+  doc.autoTable({startY:doc.lastAutoTable.finalY+5, margin:{left:L,right:L},
+    head:[["Nr.","Name","Vorname",f1,f2,"PKW < 8 min","Funktion","AGT"]], body, theme:"grid",
+    styles:{fontSize:9, cellPadding:1.6, lineColor:[190,190,190], lineWidth:.2, valign:"middle"},
+    headStyles:{fillColor:red, textColor:255, fontStyle:"bold", halign:"center"},
+    columnStyles:{0:{cellWidth:9,halign:"right"},1:{cellWidth:32,fontStyle:"bold"},2:{cellWidth:32},3:{cellWidth:18,halign:"center",fontStyle:"bold"},4:{cellWidth:18,halign:"center",fontStyle:"bold"},5:{cellWidth:18,halign:"center",fontStyle:"bold"},6:{cellWidth:43},7:{cellWidth:12,halign:"center",fontStyle:"bold"}},
+    didParseCell:d=>{ if(d.section==="body" && !byName.has(names[d.row.index])) d.cell.styles.textColor=[150,150,150]; },
+    foot:[["","Summe","",String(e.personen.filter(p=>p.fz==="fz1").length),String(e.personen.filter(p=>p.fz==="fz2").length),String(e.personen.filter(p=>p.fz==="pkw").length),`Gesamt: ${s.g}`,s.agt?String(s.agt):""]],
+    footStyles:{fillColor:[245,242,239], textColor:20, fontStyle:"bold", halign:"center"}
+  });
+  let y = doc.lastAutoTable.finalY + 8;
+  if(y > 250){ doc.addPage(); y = 20; }
+  if(e.bemerkung){
+    doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.text("Bemerkung:", L, y);
+    doc.setFont("helvetica","normal"); const lines=doc.splitTextToSize(e.bemerkung, R-L-25); doc.text(lines, L+25, y); y += lines.length*4.5 + 6;
+  }
+  y = Math.max(y+10, 270); if(y>285){ doc.addPage(); y=30; }
+  doc.setDrawColor(120); doc.line(L, y, L+70, y); doc.line(R-70, y, R, y);
+  doc.setFontSize(8); doc.setTextColor(110);
+  doc.text("Ort, Datum", L, y+4); doc.text("Unterschrift Einsatzleiter", R-70, y+4);
+  const pages = doc.getNumberOfPages();
+  for(let i=1;i<=pages;i++){ doc.setPage(i); doc.setFontSize(7); doc.setTextColor(140);
+    doc.text(`Erstellt ${new Date().toLocaleString("de-DE")}  ·  Seite ${i}/${pages}`, R, 292, {align:"right"}); }
+  return doc.output("arraybuffer");
+}
+$("b-pdf").addEventListener("click", async ()=>{
+  readForm();
+  const btn=$("b-pdf"); btn.disabled=true; btn.textContent="…";
+  try{
+    const buf = await makePDF(cur);
+    const name = `Einsatz_${cur.datum||today()}_${(cur.stichwort||"").replace(/[^\wäöüÄÖÜß-]/g,"")||"Bericht"}${cur.nr?"_"+cur.nr.replace(/[^\w-]/g,""):""}.pdf`;
+    await saveFile(name, buf);
+  }catch(err){
+    if(err && err.code==="declined") return;
+    toast(err && err.message==="load" ? "PDF-Modul konnte nicht geladen werden (Internet?)" : "PDF fehlgeschlagen");
+  }finally{ btn.disabled=false; btn.textContent="PDF"; }
+});
+
+/* ---------------- Archiv ---------------- */
+function sortedEinsaetze(){ return Object.values(einsaetze).sort((a,b)=>((b.datum||"")+(b.zeit||"")).localeCompare((a.datum||"")+(a.zeit||""))); }
+function renderArchiv(){
+  const q=$("a-search").value.trim().toLowerCase();
+  const list=sortedEinsaetze().filter(e=>!q || [e.nr,e.stichwort,e.ort,e.leiter,fmtDate(e.datum),...e.personen.map(p=>p.name)].join(" ").toLowerCase().includes(q));
+  const box=$("a-list");
+  if(!list.length){ box.innerHTML=`<div class="empty">${q?"Kein Treffer":"Noch keine Einsätze gespeichert."}</div>`; return; }
+  const mon=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+  box.innerHTML=list.map(e=>{
+    const s=staerke(e); const [y,m,d]=(e.datum||"--").split("-");
+    return `<div class="list-item" data-id="${esc(e.id)}">
+      <div class="date">${esc(d)}<small>${mon[(+m||1)-1]} ${esc((y||"").slice(2))}</small></div>
+      <div class="grow"><div class="t">${esc(e.stichwort||"Einsatz")} ${e.nr?"· "+esc(e.nr):""}</div>
+      <div class="s">${esc(e.ort||"")}${e.ort?" · ":""}${esc(e.zeit||"")} Uhr</div></div>
+      <span class="pill">${s.zf}/${s.uf}/${s.m}/<b>${s.g}</b></span></div>`;
+  }).join("");
+  box.querySelectorAll("[data-id]").forEach(el=>el.addEventListener("click",()=>openEinsatz(el.dataset.id)));
+}
+$("a-search").addEventListener("input",renderArchiv);
+
+/* ---------------- Stammdaten ---------------- */
+const sortM=()=>stamm.mitglieder.sort((a,b)=>a.localeCompare(b,"de"));
+function renderStamm(){
+  $("m-count").textContent = stamm.mitglieder.length ? stamm.mitglieder.length+" Personen" : "";
+  $("m-list").innerHTML = stamm.mitglieder.length ? stamm.mitglieder.map((n,i)=>`<div class="mem"><span>${esc(n)}</span><button class="x" data-mdel="${i}" aria-label="entfernen">×</button></div>`).join("") : '<div class="empty">Noch keine Mitglieder.</div>';
+  $("m-list").querySelectorAll("[data-mdel]").forEach(b=>b.addEventListener("click",()=>{ const n=stamm.mitglieder[+b.dataset.mdel]; confirmDlg("Mitglied entfernen?", n+" wird aus der Liste entfernt. Gespeicherte Einsätze bleiben unverändert.","Entfernen",()=>{stamm.mitglieder.splice(+b.dataset.mdel,1); saveStamm(); renderStamm();}); }));
+  $("f-list").innerHTML = stamm.fahrzeuge.length ? stamm.fahrzeuge.map((n,i)=>`<div class="mem"><span>${esc(n)}</span><button class="x" data-fdel="${i}" aria-label="entfernen">×</button></div>`).join("") : '<div class="empty">Noch keine Fahrzeuge.</div>';
+  $("f-list").querySelectorAll("[data-fdel]").forEach(b=>b.addEventListener("click",()=>{stamm.fahrzeuge.splice(+b.dataset.fdel,1); saveStamm(); renderStamm(); renderFahrzeuge();}));
+  $("mitglieder-dl").innerHTML = stamm.mitglieder.map(n=>`<option value="${esc(n)}">`).join("");
+}
+function addMembers(){
+  const parts=$("m-new").value.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
+  let n=0; parts.forEach(p=>{ if(!stamm.mitglieder.some(x=>x.toLowerCase()===p.toLowerCase())){ stamm.mitglieder.push(p); n++; } });
+  $("m-new").value=""; if(n){ sortM(); saveStamm(); renderStamm(); toast(n+" hinzugefügt"); }
+}
+$("m-add").addEventListener("click",addMembers);
+$("m-new").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addMembers(); }});
+$("m-new").addEventListener("paste",()=>setTimeout(()=>{ if(/[\n;]/.test($("m-new").value)) addMembers(); },0));
+function addVeh(){ const v=$("f-new").value.trim(); if(v && !stamm.fahrzeuge.includes(v)){ stamm.fahrzeuge.push(v); saveStamm(); renderStamm(); renderFahrzeuge(); } $("f-new").value=""; }
+$("f-add").addEventListener("click",addVeh);
+$("f-new").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addVeh(); }});
+
+/* ---------------- Navigation / UI ---------------- */
+function show(v){
+  ["einsatz","archiv","stamm"].forEach(x=>$("v-"+x).classList.toggle("hidden", x!==v));
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+  if(v==="archiv"){ $("title").textContent="Einsatz-Archiv"; renderArchiv(); }
+  else if(v==="stamm"){ $("title").textContent="Stammdaten"; renderStamm(); }
+  else fillForm();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ show(b.dataset.v); window.scrollTo(0,0); }));
+
+let tt; function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2200); }
+let dlgYes=null;
+function confirmDlg(title,text,yes,fn){ $("d-title").textContent=title; $("d-text").textContent=text; $("d-pre").classList.add("hidden"); $("d-yes").textContent=yes; $("d-no").classList.remove("hidden"); dlgYes=fn; $("dlg").classList.add("open"); }
+function showText(title,text){ $("d-title").textContent=title; $("d-text").textContent="Text markieren und kopieren:"; $("d-pre").textContent=text; $("d-pre").classList.remove("hidden"); $("d-yes").textContent="Schließen"; $("d-no").classList.add("hidden"); dlgYes=null; $("dlg").classList.add("open"); }
+$("d-no").addEventListener("click",()=>$("dlg").classList.remove("open"));
+$("d-yes").addEventListener("click",()=>{ $("dlg").classList.remove("open"); if(dlgYes) dlgYes(); });
+
+/* ---------------- Start ---------------- */
+lsLoad();
+try{ const d=JSON.parse(localStorage.getItem(LS+"-draft")||"null"); if(d && d.id){ cur=d; dirty=true; } }catch(e){}
+if(!cur) cur=blank();
+fillForm(); renderStamm();
+
+(async ()=>{
+  try{
+    if(!window.claude || !claude.use) return;
+    const d = await claude.use("db");
+    if(!d) return;
+    db = d;
+    $("sync").textContent="verbinde …";
+    const timer=setTimeout(()=>{$("sync").textContent="offline";},10000);
+    db.doc("stamm/daten").onSnapshot(s=>{
+      if(s.exists){ const v=s.data(); stamm={mitglieder:[...(v.mitglieder||[])], fahrzeuge:[...(v.fahrzeuge||[])]}; lsSave(); renderStamm(); if(!$("v-einsatz").classList.contains("hidden")) renderFahrzeuge(); }
+      else if(!s.metadata.fromCache && (stamm.mitglieder.length||stamm.fahrzeuge.length)){ saveStamm(); }
+    }, ()=>{});
+    db.collection("einsaetze").onSnapshot(snap=>{
+      if(!snap.metadata.fromCache){ clearTimeout(timer); $("sync").textContent="synchron"; }
+      const remote={}; snap.docs.forEach(x=>{ const v=x.data(); if(v) remote[x.id]=clone(v); });
+      // lokal gespeicherte, die noch nicht online sind, hochladen
+      if(!snap.metadata.fromCache){ Object.keys(einsaetze).forEach(id=>{ if(!remote[id]){ remote[id]=einsaetze[id]; db.collection("einsaetze").doc(id).set(clone(einsaetze[id])).catch(()=>{}); } }); }
+      einsaetze=remote; lsSave(); renderArchiv();
+      $("b-del").classList.toggle("hidden", !einsaetze[cur.id]);
+    }, e=>{ clearTimeout(timer); $("sync").textContent="lokal"; });
+  }catch(e){ db=null; }
+})();
+})();
+</script>
+</body>
+</html>
