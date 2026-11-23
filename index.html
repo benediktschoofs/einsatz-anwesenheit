@@ -196,6 +196,7 @@ pre.out{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10p
       <h2>Alle Einsätze exportieren</h2>
       <div class="btns"><button class="btn" id="b-csv-all">CSV aller Einsätze</button></div>
     </div>
+    <p class="hint" style="text-align:center">Version 2026-11-23b</p>
   </section>
 </main>
 
@@ -640,7 +641,11 @@ fillForm(); renderStamm();
 // Offline-Betrieb (nur bei eigener Webadresse, z. B. GitHub Pages)
 try{
   if("serviceWorker" in navigator && location.protocol==="https:" && !window.claude){
-    navigator.serviceWorker.register("sw.js").then(()=>navigator.serviceWorker.ready).then(()=>{ $("sync").textContent="offline bereit"; }).catch(()=>{});
+    const mark=()=>{ $("sync").textContent = navigator.serviceWorker.controller ? (navigator.onLine ? "offline bereit" : "offline") : "lokal"; };
+    mark();
+    navigator.serviceWorker.addEventListener("controllerchange", mark);
+    window.addEventListener("online", mark); window.addEventListener("offline", mark);
+    navigator.serviceWorker.register("sw.js", {updateViaCache:"none"}).then(r=>{ r.update().catch(()=>{}); return navigator.serviceWorker.ready; }).then(()=>setTimeout(mark,500)).catch(()=>{});
   }
 }catch(e){}
 
