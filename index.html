@@ -88,12 +88,16 @@ nav.tabs button.on{color:var(--red);font-weight:700}
 .prow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .prow:first-child{border-top:0}
 .prow .grow{flex:1;min-width:0}
-.prow .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .nm{font-weight:600;line-height:1.2;word-break:break-word}
 .prow.off .nm{font-weight:500;color:var(--muted)}
 .fnbtn{border:0;background:none;padding:2px 0 0;font:inherit;font-size:13px;color:var(--red);cursor:pointer;text-align:left}
 .fnbtn.none{color:var(--muted);text-decoration:underline dotted}
-.seg{display:flex;gap:5px;flex:none}
-.seg button{width:42px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.seg{display:flex;gap:4px;flex:none}
+.fzcount{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.fzcount div{border:1px solid var(--line);border-radius:10px;padding:6px 2px}
+.fzcount b{display:block;font-size:18px}
+.fzcount span{font-size:11px;color:var(--muted);font-weight:700}
+.seg button{min-width:44px;padding:0 5px;font-size:12px!important;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 .seg button.on{background:var(--red);border-color:var(--red);color:#fff}
 .seg button.p.on{background:var(--amber);border-color:var(--amber)}
 .seg button.p{font-size:12px}
@@ -138,6 +142,7 @@ pre.out{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10p
         <div><b id="st-m">0</b><span>Mannschaft</span></div>
         <div class="total"><b id="st-g">0</b><span>Gesamt</span></div>
       </div>
+      <div class="fzcount" id="fzcount"></div>
       <p class="hint" id="st-agt"></p>
     </div>
 
@@ -177,7 +182,7 @@ pre.out{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10p
       <p class="hint">Mehrere auf einmal: Namen mit Zeilenumbruch oder Semikolon einfügen.</p>
       <div id="m-list" style="margin-top:8px"></div>
     </div>
-    <div class="card">
+    <div class="card hidden">
       <h2>Fahrzeuge</h2>
       <div style="display:flex;gap:8px;margin-bottom:6px">
         <input id="f-new" placeholder="z. B. HLF 20, LF 10, MTW">
@@ -248,9 +253,10 @@ const FUNKTIONEN = ["Einsatzleiter","Zugführer","Gruppenführer","Fahrzeugführ
 const ZF = ["Einsatzleiter","Zugführer"];
 const UF = ["Gruppenführer","Fahrzeugführer"];
 const SLOTS = [
-  {key:"fz1", label:"1. Fahrzeug", num:"1"},
-  {key:"fz2", label:"2. Fahrzeug", num:"2"},
-  {key:"pkw", label:"Pkw < 8 min", num:"P"}
+  {key:"fz1", label:"HLF", btn:"HLF"},
+  {key:"fz2", label:"MTF", btn:"MTF"},
+  {key:"fz3", label:"TSF-W", btn:"TSF-W"},
+  {key:"pkw", label:"Pkw < 8 min", btn:"Pkw"}
 ];
 
 /* ---------------- Speicher ---------------- */
@@ -287,7 +293,7 @@ function newId(){ return "e"+Date.now().toString(36)+Math.random().toString(36).
 
 function blank(){
   return {id:newId(), datum:today(), zeit:nowTime(), nr:"", stichwort:"", ort:"", leiter:"", bemerkung:"",
-    fahrzeuge:{fz1:stamm.fahrzeuge[0]||"", fz2:stamm.fahrzeuge[1]||"", pkw:""},
+    fahrzeuge:{fz1:"HLF", fz2:"MTF", fz3:"TSF-W", pkw:""},
     personen:[], created:Date.now(), updated:null};
 }
 
@@ -324,18 +330,12 @@ function renderFahrzeuge(){
   if(filterOnly) names = names.filter(n=>byName.has(n));
   const rows = names.map(n=>{
     const p = byName.get(n);
-    const seg = SLOTS.map(s=>`<button class="${s.key==="pkw"?"p":""} ${p&&p.fz===s.key?"on":""}" data-n="${esc(n)}" data-s="${s.key}" aria-label="${esc(s.label)}">${s.key==="pkw"?"Pkw":s.num}</button>`).join("");
+    const seg = SLOTS.map(s=>`<button class="${s.key==="pkw"?"p":""} ${p&&p.fz===s.key?"on":""}" data-n="${esc(n)}" data-s="${s.key}" aria-label="${esc(s.label)}">${s.btn}</button>`).join("");
     const fn = p ? `<button class="fnbtn ${p.funktion?"":"none"}" data-fn="${p.i}">${p.funktion?esc(p.funktion):"Funktion wählen"}${p.agt?'<span class="agt">AGT</span>':''}</button>` : "";
     return `<div class="prow ${p?"":"off"}"><div class="grow"><div class="nm">${esc(n)}</div>${fn}</div><div class="seg">${seg}</div></div>`;
   }).join("") || `<div class="empty">${filterOnly?"Noch niemand eingetragen.":"Keine Mitglieder – unter „Stammdaten“ anlegen."}</div>`;
 
   box.innerHTML = `
-    <div class="card">
-      <h2>Fahrzeuge</h2>
-      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num">1</div>${vehSelect("fz1")}</div><span class="pill">${cnt("fz1")}</span></div>
-      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num">2</div>${vehSelect("fz2")}</div><span class="pill">${cnt("fz2")}</span></div>
-      <div class="vrow"><div class="vh" style="margin:0;flex:1"><div class="num pkw">P</div><span class="lbl">Pkw nachgekommen (&lt; 8 min)</span></div><span class="pill">${cnt("pkw")}</span></div>
-    </div>
     <div class="card">
       <h2>Personal <span class="tag">${cur.personen.length} von ${Math.max(names.length, stamm.mitglieder.length)} anwesend</span></h2>
       <div class="filter">
@@ -362,7 +362,7 @@ function renderFahrzeuge(){
   const addP=()=>{
     const v=$("p-new").value.trim(); if(!v) return;
     if(!stamm.mitglieder.some(x=>x.toLowerCase()===v.toLowerCase())){ stamm.mitglieder.push(v); sortM(); saveStamm(); renderStamm(); }
-    filterOnly=false; renderFahrzeuge(); toast(v+" hinzugefügt – jetzt 1, 2 oder Pkw antippen");
+    filterOnly=false; renderFahrzeuge(); toast(v+" hinzugefügt – jetzt Fahrzeug antippen");
   };
   $("p-add").addEventListener("click",addP);
   $("p-new").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addP(); }});
@@ -377,6 +377,7 @@ function renderStaerke(){
   const s = staerke(cur);
   $("st-zf").textContent=s.zf; $("st-uf").textContent=s.uf; $("st-m").textContent=s.m; $("st-g").textContent=s.g;
   $("st-text").textContent=`${s.zf}/${s.uf}/${s.m}/${s.g}`;
+  $("fzcount").innerHTML = SLOTS.map(sl=>`<div><b>${cur.personen.filter(p=>p.fz===sl.key).length}</b><span>${esc(sl.btn)}</span></div>`).join("");
   $("st-agt").textContent = s.agt ? `${s.agt} Atemschutzgeräteträger eingesetzt` : "";
 }
 
@@ -387,7 +388,7 @@ function openSheet(i){
   const s = SLOTS.find(x=>x.key===p.fz);
   sh = {i, fn:p.funktion, agt:!!p.agt};
   $("s-title").textContent = p.name;
-  $("s-sub").textContent = s.label + (p.fz!=="pkw" && cur.fahrzeuge[p.fz] ? " · "+cur.fahrzeuge[p.fz] : "");
+  $("s-sub").textContent = s.label;
   renderSheet(); $("sheet").classList.add("open");
 }
 function renderSheet(){
@@ -447,7 +448,7 @@ function asText(e){
   t+=`Stärke: ${s.zf}/${s.uf}/${s.m}/${s.g}`+(s.agt?` (AGT: ${s.agt})`:"")+"\n";
   SLOTS.forEach(sl=>{
     const ps=e.personen.filter(p=>p.fz===sl.key); if(!ps.length) return;
-    t+=`\n${sl.label}${sl.key!=="pkw"&&e.fahrzeuge[sl.key]?" – "+e.fahrzeuge[sl.key]:""} (${ps.length})\n`;
+    t+=`\n${sl.label} (${ps.length})\n`;
     ps.forEach(p=>t+=`• ${p.name}${p.funktion?" – "+p.funktion:""}${p.agt?" (AGT)":""}\n`);
   });
   if(e.bemerkung) t+=`\nBemerkung: ${e.bemerkung}\n`;
@@ -531,14 +532,14 @@ async function makePDF(e){
   const byName = new Map(e.personen.map(p=>[p.name,p]));
   const names = stamm.mitglieder.slice(); e.personen.forEach(p=>{ if(!names.includes(p.name)) names.push(p.name); });
   const body = names.map((n,i)=>{ const p=byName.get(n); const [nn,vn]=splitName(n);
-    return [i+1, nn, vn, p&&p.fz==="fz1"?"X":"", p&&p.fz==="fz2"?"X":"", p&&p.fz==="pkw"?"X":"", p?(p.funktion||""):"", p&&p.agt?"X":""]; });
+    return [i+1, nn, vn, ...SLOTS.map(sl=>p&&p.fz===sl.key?"X":""), p?(p.funktion||""):"", p&&p.agt?"X":""]; });
   doc.autoTable({startY:doc.lastAutoTable.finalY+5, margin:{left:L,right:L},
-    head:[["Nr.","Name","Vorname",f1,f2,"PKW < 8 min","Funktion","AGT"]], body, theme:"grid",
+    head:[["Nr.","Name","Vorname",...SLOTS.map(sl=>sl.key==="pkw"?"PKW < 8 min":sl.label),"Funktion","AGT"]], body, theme:"grid",
     styles:{fontSize:9, cellPadding:1.6, lineColor:[190,190,190], lineWidth:.2, valign:"middle"},
     headStyles:{fillColor:red, textColor:255, fontStyle:"bold", halign:"center"},
-    columnStyles:{0:{cellWidth:9,halign:"right"},1:{cellWidth:32,fontStyle:"bold"},2:{cellWidth:32},3:{cellWidth:18,halign:"center",fontStyle:"bold"},4:{cellWidth:18,halign:"center",fontStyle:"bold"},5:{cellWidth:18,halign:"center",fontStyle:"bold"},6:{cellWidth:43},7:{cellWidth:12,halign:"center",fontStyle:"bold"}},
+    columnStyles:{0:{cellWidth:9,halign:"right"},1:{cellWidth:30,fontStyle:"bold"},2:{cellWidth:28},3:{cellWidth:16,halign:"center",fontStyle:"bold"},4:{cellWidth:16,halign:"center",fontStyle:"bold"},5:{cellWidth:16,halign:"center",fontStyle:"bold"},6:{cellWidth:16,halign:"center",fontStyle:"bold"},7:{cellWidth:39},8:{cellWidth:12,halign:"center",fontStyle:"bold"}},
     didParseCell:d=>{ if(d.section==="body" && !byName.has(names[d.row.index])) d.cell.styles.textColor=[150,150,150]; },
-    foot:[["","Summe","",String(e.personen.filter(p=>p.fz==="fz1").length),String(e.personen.filter(p=>p.fz==="fz2").length),String(e.personen.filter(p=>p.fz==="pkw").length),`Gesamt: ${s.g}`,s.agt?String(s.agt):""]],
+    foot:[["","Summe","",...SLOTS.map(sl=>String(e.personen.filter(p=>p.fz===sl.key).length)),`Gesamt: ${s.g}`,s.agt?String(s.agt):""]],
     footStyles:{fillColor:[245,242,239], textColor:20, fontStyle:"bold", halign:"center"}
   });
   let y = doc.lastAutoTable.finalY + 8;
